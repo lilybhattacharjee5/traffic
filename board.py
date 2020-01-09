@@ -34,7 +34,7 @@ c.pack(fill = tk.BOTH, expand = True)
 c.bind('<Configure>', config_grid)
 
 def move_agent():
-    agent.move(10, "right")
+    agent.move(5, 5, "diag_lu")
     c.after(100, move_agent)
 move_agent()
 m.mainloop()
