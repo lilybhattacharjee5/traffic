@@ -1,5 +1,6 @@
 import tkinter as tk
 import sys
+from agent import *
 
 cell_width = int(sys.argv[1])
 start_x = int(sys.argv[2])
@@ -26,14 +27,14 @@ def config_grid(event = None):
     return create_grid(event, cell_width = cell_width)
 
 c = tk.Canvas(m, height = 1000, width = 1000, bg = 'black')
-agent = c.create_rectangle(start_x, start_y, start_x + cell_width, start_y + cell_width, fill = 'blue', outline = 'blue')
+agent = Agent(start_x, start_y, cell_width, c)
 
 c.pack(fill = tk.BOTH, expand = True)
 
 c.bind('<Configure>', config_grid)
 
 def move_agent():
-    c.move(agent, 10, 0)
-    c.after(1000, move_agent)
+    agent.move(10, "right")
+    c.after(100, move_agent)
 move_agent()
 m.mainloop()
