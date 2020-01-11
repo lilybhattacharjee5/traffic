@@ -1,4 +1,4 @@
-simple_dirs = ["left", "right", "up", "down"]
+simple_dirs = ["left", "right", "up", "down", "stay"]
 complex_dirs = ["diag_ru", "diag_rd", "diag_lu", "diag_ld"]
 dirs = simple_dirs + complex_dirs
 
@@ -11,6 +11,7 @@ dir_trans = {
     "diag_rd": (lambda x: x > 0, lambda y: y > 0),
     "diag_lu": (lambda x: x < 0, lambda y: y < 0),
     "diag_ld": (lambda x: x < 0, lambda y: y > 0),
+    "stay": (lambda x: x == 0, lambda y: y == 0),
 }
 
 def distance_formula(x1, y1, x2, y2):
@@ -26,3 +27,10 @@ def infer_dir(x1, y1, x2, y2):
         if x_func(x_trans) and y_func(y_trans):
             return d
     return Error("direction could not be found")
+
+def possible_coords(min_coord, max_coord, cell_width):
+    all_coords = list(range(min_coord, max_coord, cell_width))
+    return all_coords
+
+def random_possible_coord(all_coords):
+    return random.choice(all_coords)

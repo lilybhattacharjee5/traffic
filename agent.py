@@ -1,9 +1,11 @@
 import math
+import random
 from heapq import *
 from utils import *
+from display_utils import *
 
 class Agent:
-    def __init__(self, canvas, city, start_x, start_y, dest_x, dest_y, size, city_width, city_height, color):
+    def __init__(self, window, canvas, city, start_x, start_y, dest_x, dest_y, size, city_width, city_height, color):
         self.canvas = canvas
         self.city = city
         self.x = start_x
@@ -14,8 +16,11 @@ class Agent:
         self.dist_traveled = 0
         self.heuristic_val = math.inf
         self.agent_obj = canvas.create_rectangle(start_x, start_y, start_x + size, start_y + size, fill = color, outline = color)
-        # self.agent_obj.bind("<Enter>", lambda: print("hi"))
-        # self.agent_obj.bind("<Leave>", lambda: print("bye"))
+
+        pos = window.nametowidget("pos")
+        score = window.nametowidget("score")
+        self.canvas.tag_bind(self.agent_obj, '<Enter>', configAddHeaderText(self, pos, score))
+        self.canvas.tag_bind(self.agent_obj, '<Leave>', configRemoveHeaderText(pos, score))
 
     def calc_move(self, mag_x, mag_y, direction):
         dir_x_y = {
@@ -27,6 +32,7 @@ class Agent:
             "diag_rd": (mag_x, mag_y),
             "diag_lu": (-mag_x, -mag_y),
             "diag_ld": (-mag_x, mag_y),
+            "stay": (0, 0),
         }
         return dir_x_y[direction]
 
@@ -53,7 +59,7 @@ class Agent:
         for d in dirs:
             x_offset, y_offset = self.calc_move(mag_x, mag_y, d)
             next_x, next_y = curr_x + x_offset, curr_y + y_offset
-            if self.city.cell_type(next_x, next_y) != "obst":
+            if self.city.cell_type(next_x, next_y) != "o":
                 child_states.append((next_x, next_y))
         return child_states
 
@@ -78,9 +84,7 @@ class Agent:
             self.heuristic_val = heuristic(next_x, next_y)
             return next_dir
         else:
-            # recalculate with new start position
-            self.astar_search(mag_x, mag_y, heuristic)
-            return astar_next_move(mag_x, mag_y, heuristic)
+            return "stay"
 
     def reconstruct_path(self, path_tracker, end_state):
         path_map = {}
