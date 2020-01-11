@@ -1,17 +1,21 @@
 import math
-
-dirs = ["left", "right", "up", "down", "diag_ru", "diag_rd", "diag_lu", "diag_ld"]
+from heapq import *
+from utils import *
 
 class Agent:
-    def __init__(self, start_x, start_y, dest_x, dest_y, size, canvas, color):
+    def __init__(self, canvas, city, start_x, start_y, dest_x, dest_y, size, city_width, city_height, color):
+        self.canvas = canvas
+        self.city = city
         self.x = start_x
         self.y = start_y
         self.dest_x = dest_x
         self.dest_y = dest_y
         self.size = size
-        self.canvas = canvas
-        self.obj = canvas.create_rectangle(start_x, start_y, start_x + size, start_y + size, fill = color, outline = color)
         self.dist_traveled = 0
+        self.heuristic_val = math.inf
+        self.agent_obj = canvas.create_rectangle(start_x, start_y, start_x + size, start_y + size, fill = color, outline = color)
+        # self.agent_obj.bind("<Enter>", lambda: print("hi"))
+        # self.agent_obj.bind("<Leave>", lambda: print("bye"))
 
     def calc_move(self, mag_x, mag_y, direction):
         dir_x_y = {
@@ -28,10 +32,13 @@ class Agent:
 
     def move(self, mag_x, mag_y, direction):
         x_move, y_move = self.calc_move(mag_x, mag_y, direction)
+        if direction in simple_dirs:
+            self.dist_traveled += abs(x_move) + abs(y_move)
+        else:
+            self.dist_traveled += distance_formula(self.x, self.y, self.x + x_move, self.y + y_move)
         self.x += x_move
         self.y += y_move
-        self.dist_traveled += abs(x_move) + abs(y_move)
-        self.canvas.move(self.obj, x_move, y_move)
+        self.canvas.move(self.agent_obj, x_move, y_move)
 
     def manhattan_heuristic(self, x, y):
         x_remain = abs(self.dest_x - x)
@@ -39,11 +46,18 @@ class Agent:
         return x_remain + y_remain
 
     def distance_heuristic(self, x, y):
-        x_remain = self.dest_x - x
-        y_remain = self.dest_y - y
-        return (x_remain**2 + y_remain**2)**0.5
+        return distance_formula(x, y, self.dest_x, self.dest_y)
 
-    def next_move(self, mag_x, mag_y, heuristic):
+    def find_child_states(self, curr_x, curr_y, mag_x, mag_y):
+        child_states = []
+        for d in dirs:
+            x_offset, y_offset = self.calc_move(mag_x, mag_y, d)
+            next_x, next_y = curr_x + x_offset, curr_y + y_offset
+            if self.city.cell_type(next_x, next_y) != "obst":
+                child_states.append((next_x, next_y))
+        return child_states
+
+    def greedy_next_move(self, mag_x, mag_y, heuristic):
         min_cost = math.inf
         opt_dir = "right"
         for d in dirs:
@@ -53,8 +67,72 @@ class Agent:
             if next_heuristic + self.dist_traveled < min_cost:
                 min_cost = next_heuristic + self.dist_traveled
                 opt_dir = d
+                self.heuristic_val = min_cost
         return opt_dir
 
+    def astar_next_move(self, mag_x, mag_y, heuristic):
+        curr_pos = (self.x, self.y)
+        if curr_pos in self.astar_path_map:
+            next_dir = self.astar_path_map[curr_pos]
+            next_x, next_y = self.calc_move(mag_x, mag_y, next_dir)
+            self.heuristic_val = heuristic(next_x, next_y)
+            return next_dir
+        else:
+            # recalculate with new start position
+            self.astar_search(mag_x, mag_y, heuristic)
+            return astar_next_move(mag_x, mag_y, heuristic)
+
+    def reconstruct_path(self, path_tracker, end_state):
+        path_map = {}
+        curr_state = end_state
+        while path_tracker[curr_state] != None:
+            parent = path_tracker[curr_state]
+            path_map[parent] = infer_dir(parent[0], parent[1], curr_state[0], curr_state[1])
+            curr_state = parent
+        return path_map
+
+    def astar_search(self, mag_x, mag_y, heuristic):
+        state_queue = [[math.inf, (self.x, self.y)]]
+        path_tracker = {(self.x, self.y): None}
+        goal_state = (self.dest_x, self.dest_y)
+
+        gscore = {}
+        for i in range(0, self.city.width + self.size, self.size):
+            for j in range(0, self.city.height + self.size, self.size):
+                gscore[(i, j)] = math.inf
+        gscore[(self.x, self.y)] = 0
+
+        heapify(state_queue)
+
+        while state_queue != []:
+            heapify(state_queue)
+            curr_priority, curr_state = heappop(state_queue)
+            curr_x, curr_y = curr_state
+            if curr_state == goal_state:
+                self.astar_path_map = self.reconstruct_path(path_tracker, curr_state)
+                return
+            next_children = self.find_child_states(curr_x, curr_y, mag_x, mag_y)
+            for c in next_children:
+                next_x, next_y = c
+                tentative_gscore = gscore[curr_state] + distance_formula(curr_x, curr_y, next_x, next_y)
+                curr_gscore = math.inf
+                if c in gscore:
+                    curr_gscore = gscore[c]
+                if tentative_gscore < curr_gscore:
+                    path_tracker[c] = curr_state
+                    gscore[c] = tentative_gscore
+                    new_priority = gscore[c] + heuristic(next_x, next_y)
+                    replaced = False
+                    for s in state_queue:
+                        if s[1] == c:
+                            s[0] = new_priority
+                            replaced = True
+                    if not replaced:
+                        heappush(state_queue, [new_priority, c])
+        self.astar_path_map = []
+
     def auto_move(self, mag_x, mag_y):
-        opt_dir = self.next_move(mag_x, mag_y, self.manhattan_heuristic)
+        # opt_dir = self.greedy_next_move(mag_x, mag_y, self.distance_heuristic)
+        self.astar_search(self.size, self.size, self.manhattan_heuristic)
+        opt_dir = self.astar_next_move(mag_x, mag_y, self.manhattan_heuristic)
         self.move(mag_x, mag_y, opt_dir)
