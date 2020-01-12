@@ -3,20 +3,23 @@ import sys
 from agent import *
 from city import *
 from display_utils import *
+from traffic_scenario_gen import *
 
-if len(sys.argv) < 5: raise ValueError("Incorrect number of initializing arguments")
+if len(sys.argv) < 6: raise ValueError("Incorrect number of initializing arguments")
 
 window_width, window_height = int(sys.argv[1]), int(sys.argv[2])
 cell_width = int(sys.argv[3])
 num_agents = int(sys.argv[4])
+obstacles_opt = int(sys.argv[5])
 
 header_widget_h, header_widget_w = 1, 50
 
-possible_x_coords = possible_coords(0, window_width, cell_width)
-possible_y_coords = possible_coords(0, window_height, cell_width)
+# agent_pos = random_pos(window_width, window_height, cell_width, num_agents)
+# destination_pos = random_pos(window_width, window_height, cell_width, num_agents)
+agent_pos = col_pos(0, window_width, window_height, cell_width, num_agents)
+destination_pos = col_pos(window_width - cell_width, window_width, window_height, cell_width, num_agents)
 
-agent_pos = [(random.choice(possible_x_coords), random.choice(possible_y_coords)) for _ in range(num_agents)]
-destination_pos = [(random.choice(possible_x_coords), random.choice(possible_y_coords)) for _ in range(num_agents)]
+agent_colors, destination_colors = color_pairs(num_agents)
 
 window = tk.Tk()
 window.geometry(str(window_width) + "x" + str(window_height + 25))
@@ -38,11 +41,12 @@ score.pack(in_ = header, side = 'left')
 
 header.pack(side = 'top', anchor = 'w')
 
-city.create_destinations(destination_pos)
+city.create_destinations(destination_pos, destination_colors)
 
-agents = [Agent(window, canvas, city, agent_pos[i][0], agent_pos[i][1], destination_pos[i][0], destination_pos[i][1], cell_width, window_width, window_height, 'yellow') for i in range(len(agent_pos))]
+agents = [Agent(window, canvas, city, agent_pos[i][0], agent_pos[i][1], destination_pos[i][0], destination_pos[i][1], cell_width, window_width, window_height, agent_colors[i]) for i in range(len(agent_pos))]
 
-city.create_obstacles()
+if obstacles_opt == 1:
+    city.create_random_obstacles()
 
 canvas.pack(fill = tk.BOTH, expand = True)
 canvas.bind('<Configure>', config_grid(canvas, window_width, window_height, cell_width))

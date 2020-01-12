@@ -14,16 +14,16 @@ class City:
         self.obstacles = []
         self.grid = [["e" for _ in range(len(self.possible_x_coords))] for _ in range(len(self.possible_y_coords))]
 
-    def create_destinations(self, destination_pos, mode = "random"):
+    def create_destinations(self, destination_pos, colors, mode = "random"):
         if mode == "random":
             for d in range(len(destination_pos)):
                 end_x, end_y = destination_pos[d]
                 cell_x, cell_y = math.floor(end_x / self.cell_width), math.floor(end_y / self.cell_width)
-                new_dest = Block(self.canvas, 1, end_x, end_y, self.cell_width, 'blue')
+                new_dest = Block(self.canvas, 1, end_x, end_y, self.cell_width, colors[d])
                 self.destinations.append(new_dest)
                 self.grid[cell_y][cell_x] = "d"
 
-    def create_obstacles(self, obstacle_pos = [], mode = "random"):
+    def create_random_obstacles(self, obstacle_pos = [], mode = "random"):
         if mode == "random":
             num_cells = int(math.floor(self.width / self.cell_width) * math.floor(self.height / self.cell_width))
             num_obstacles = random.randint(0, math.floor(num_cells / 10))

@@ -138,6 +138,6 @@ class Agent:
 
     def auto_move(self, mag_x, mag_y):
         # opt_dir = self.greedy_next_move(mag_x, mag_y, self.distance_heuristic)
-        self.astar_search(self.size, self.size, self.manhattan_heuristic)
+        self.astar_search(mag_x, mag_y, self.manhattan_heuristic)
         opt_dir = self.astar_next_move(mag_x, mag_y, self.manhattan_heuristic)
         self.move(mag_x, mag_y, opt_dir)
