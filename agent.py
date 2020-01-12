@@ -80,7 +80,8 @@ class Agent:
         curr_pos = (self.x, self.y)
         if curr_pos in self.astar_path_map:
             next_dir = self.astar_path_map[curr_pos]
-            next_x, next_y = self.calc_move(mag_x, mag_y, next_dir)
+            x_move, y_move = self.calc_move(mag_x, mag_y, next_dir)
+            next_x, next_y = self.x + x_move, self.y + y_move
             self.heuristic_val = heuristic(next_x, next_y)
             return next_dir
         else:
