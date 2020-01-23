@@ -1,3 +1,4 @@
+#add comment
 class Block:
     def __init__(self, canvas, value, x, y, size, color):
         self.value = value
