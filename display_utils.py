@@ -18,9 +18,9 @@ def config_move_agents(canvas, agents, cell_width):
     def move_agents():
         for agent in agents:
             if agent.x != agent.dest_x or agent.y != agent.dest_y:
-                x_speed = random.randint(1, 5)
+                x_speed = 1
                 agent.auto_move(mag_x = cell_width * x_speed, mag_y = cell_width)
-        canvas.after(1000, move_agents)
+        canvas.after(500, move_agents)
     move_agents()
 
 def configAddHeaderText(agent, pos, score, event = None):

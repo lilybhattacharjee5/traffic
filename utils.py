@@ -34,3 +34,6 @@ def possible_coords(min_coord, max_coord, cell_width):
 
 def random_possible_coord(all_coords):
     return random.choice(all_coords)
+
+def valid_move(city, curr_x, curr_y, x, y):
+    return city.cell_type(x, y) in ["e", "d"] or (curr_x == x and curr_y == y)

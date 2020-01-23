@@ -10,6 +10,8 @@ class Agent:
         self.city = city
         self.x = start_x
         self.y = start_y
+        self.start_x = start_x
+        self.start_y = start_y
         self.dest_x = dest_x
         self.dest_y = dest_y
         self.size = size
@@ -42,8 +44,14 @@ class Agent:
             self.dist_traveled += abs(x_move) + abs(y_move)
         else:
             self.dist_traveled += distance_formula(self.x, self.y, self.x + x_move, self.y + y_move)
+        cell_x, cell_y = math.floor(self.x / self.size), math.floor(self.y / self.size)
+        self.city.grid[cell_y][cell_x] = 'e'
+
         self.x += x_move
         self.y += y_move
+
+        cell_x, cell_y = math.floor(self.x / self.size), math.floor(self.y / self.size)
+        if self.x != self.dest_x or self.y != self.dest_y: self.city.grid[cell_y][cell_x] = 'a'
         self.canvas.move(self.agent_obj, x_move, y_move)
 
     def manhattan_heuristic(self, x, y):
@@ -59,25 +67,29 @@ class Agent:
         for d in dirs:
             x_offset, y_offset = self.calc_move(mag_x, mag_y, d)
             next_x, next_y = curr_x + x_offset, curr_y + y_offset
-            if self.city.cell_type(next_x, next_y) != "o":
+            if valid_move(self.city, self.x, self.y, next_x, next_y):
                 child_states.append((next_x, next_y))
         return child_states
 
     def greedy_next_move(self, mag_x, mag_y, heuristic):
         min_cost = math.inf
         opt_dir = "right"
+        curr_pos = (self.x, self.y)
+        if curr_pos == (self.dest_x, self.dest_y): return "stay"
         for d in dirs:
             x_offset, y_offset = self.calc_move(mag_x, mag_y, d)
             next_x, next_y = self.x + x_offset, self.y + y_offset
-            next_heuristic = heuristic(next_x, next_y)
-            if next_heuristic + self.dist_traveled < min_cost:
-                min_cost = next_heuristic + self.dist_traveled
-                opt_dir = d
-                self.heuristic_val = min_cost
+            if valid_move(self.city, self.x, self.y, next_x, next_y):
+                next_heuristic = heuristic(next_x, next_y)
+                if next_heuristic + self.dist_traveled < min_cost:
+                    min_cost = next_heuristic + self.dist_traveled
+                    opt_dir = d
+                    self.heuristic_val = min_cost
         return opt_dir
 
-    def astar_next_move(self, mag_x, mag_y, heuristic):
+    def astar_next_move(self, mag_x, mag_y, heuristic, depth):
         curr_pos = (self.x, self.y)
+        if curr_pos == (self.dest_x, self.dest_y): return "stay"
         if curr_pos in self.astar_path_map:
             next_dir = self.astar_path_map[curr_pos]
             x_move, y_move = self.calc_move(mag_x, mag_y, next_dir)
@@ -85,7 +97,15 @@ class Agent:
             self.heuristic_val = heuristic(next_x, next_y)
             return next_dir
         else:
-            return "stay"
+            if depth > 1:
+                print(depth)
+                return self.greedy_next_move(mag_x, mag_y, heuristic)
+            print(depth)
+            self.astar_search(mag_x, mag_y, heuristic)
+            return self.astar_next_move(mag_x, mag_y, heuristic, depth + 1)
+            # print(self.astar_path_map)
+            #print("lo")
+            #return "stay"
 
     def reconstruct_path(self, path_tracker, end_state):
         path_map = {}
@@ -139,5 +159,5 @@ class Agent:
     def auto_move(self, mag_x, mag_y):
         # opt_dir = self.greedy_next_move(mag_x, mag_y, self.distance_heuristic)
         self.astar_search(mag_x, mag_y, self.manhattan_heuristic)
-        opt_dir = self.astar_next_move(mag_x, mag_y, self.manhattan_heuristic)
+        opt_dir = self.astar_next_move(mag_x, mag_y, self.manhattan_heuristic, 0)
         self.move(mag_x, mag_y, opt_dir)

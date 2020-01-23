@@ -26,7 +26,7 @@ class City:
     def create_random_obstacles(self, obstacle_pos = [], mode = "random"):
         if mode == "random":
             num_cells = int(math.floor(self.width / self.cell_width) * math.floor(self.height / self.cell_width))
-            num_obstacles = random.randint(0, math.floor(num_cells / 10))
+            num_obstacles = random.randint(0, math.floor(num_cells / 5))
             for _ in range(num_obstacles):
                 x_idx_range = list(range(len(self.possible_x_coords)))
                 y_idx_range = list(range(len(self.possible_y_coords)))
